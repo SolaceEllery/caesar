@@ -18,11 +18,11 @@
 using namespace std;
 using namespace filesystem;
 
-Csar::Csar(const char* fileName, bool p) : FileName(fileName), P(p)
+Csar::Csar(const char* fileName, bool p, bool outPathIsUsed, std::string outPath) : FileName(fileName), P(p), UsingOutPath(outPathIsUsed), OutPath(outPath)
 {
 	if (Common::ShowAllProcessDetails)
 	{
-		std::string fileName_S = fileName;
+		std::string fileName_S = (std::string)fileName;
 		GlobalFuncs_ShowMessage("Opening " + fileName_S + "...");
 	}
 

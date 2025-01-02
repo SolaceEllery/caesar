@@ -50,12 +50,15 @@ struct Csar
 {
 	std::string FileName;
 	std::streamoff Length;
+	bool UsingOutPath;
+	std::string OutPath;
+
 	uint8_t* Data = nullptr;
 
 	std::map<int, Cwar*> Cwars;
 	bool P;
 
-	Csar(const char* fileName, bool p);
+	Csar(const char* fileName, bool p, bool outPathIsUsed, std::string outPath);
 	~Csar();
 	bool Extract();
 };

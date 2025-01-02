@@ -83,7 +83,7 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{36E2B7A0-ED02-4D49-8FC2-3A8272C9F607}</ProjectGuid>
     <RootNamespace>caesar</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
