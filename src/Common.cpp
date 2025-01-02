@@ -10,6 +10,8 @@
 using namespace std;
 
 bool Common::ShowWarnings = false;
+bool Common::ShowAllProcessDetails = false;
+
 stack<string> Common::FileNames;
 stack<uint8_t*> Common::Offsets;
 vector<string> Common::Log;

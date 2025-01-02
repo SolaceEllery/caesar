@@ -26,6 +26,7 @@
     <ClInclude Include="Cseq.hpp" />
     <ClInclude Include="Cwar.hpp" />
     <ClInclude Include="Cwav.hpp" />
+    <ClInclude Include="GlobalFuncs.hpp" />
     <ClInclude Include="libsmfc\libsmfc.h" />
     <ClInclude Include="libsmfc\libsmfcx.h" />
     <ClInclude Include="sf2cute-0.2\src\sf2cute\byteio.hpp" />
@@ -51,6 +52,7 @@
     <ClCompile Include="Cseq.cpp" />
     <ClCompile Include="Cwar.cpp" />
     <ClCompile Include="Cwav.cpp" />
+    <ClCompile Include="GlobalFuncs.cpp" />
     <ClCompile Include="libsmfc\libsmfc.c" />
     <ClCompile Include="libsmfc\libsmfcx.c" />
     <ClCompile Include="sf2cute-0.2\src\sf2cute\file.cpp" />

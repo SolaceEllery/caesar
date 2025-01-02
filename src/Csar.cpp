@@ -1,3 +1,11 @@
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <map>
+#include <string>
+#include <vector>
+#include <string>
+
 #include "Csar.hpp"
 #include "Cbnk.hpp"
 #include "Cgrp.hpp"
@@ -5,18 +13,19 @@
 #include "Cseq.hpp"
 #include "Cwar.hpp"
 
-#include <cstdint>
-#include <filesystem>
-#include <fstream>
-#include <map>
-#include <string>
-#include <vector>
+#include "GlobalFuncs.hpp"
 
 using namespace std;
 using namespace filesystem;
 
 Csar::Csar(const char* fileName, bool p) : FileName(fileName), P(p)
 {
+	if (Common::ShowAllProcessDetails)
+	{
+		std::string fileName_S = fileName;
+		GlobalFuncs_ShowMessage("Opening " + fileName_S + "...");
+	}
+
 	ifstream ifs(FileName, ios::binary | ios::ate);
 
 	Length = ifs.tellg();
@@ -43,7 +52,18 @@ Csar::~Csar()
 
 bool Csar::Extract()
 {
+	if (Common::ShowAllProcessDetails)
+	{
+		GlobalFuncs_ShowMessage("Creating directory \"" + FileName.substr(0, FileName.length() - 6) + "\"...");
+	}
+
 	create_directory(FileName.substr(0, FileName.length() - 6));
+
+	if (Common::ShowAllProcessDetails)
+	{
+		GlobalFuncs_ShowMessage("Entering \"" + FileName.substr(0, FileName.length() - 6) + "\"...");
+	}
+
 	current_path(FileName.substr(0, FileName.length() - 6));
 
 	uint8_t* pos = Data;
@@ -53,7 +73,14 @@ bool Csar::Extract()
 	if (!Common::Assert(pos, 0x40, ReadFixLen(pos, 2))) { return false; }
 
 	uint32_t csarVersion = ReadFixLen(pos, 4);
+
 	uint32_t length = ReadFixLen(pos, 4);
+
+	if (Common::ShowAllProcessDetails)
+	{
+		GlobalFuncs_ShowMessage("CWAR Version: " + std::to_string(csarVersion));
+		GlobalFuncs_ShowMessage("CWAR Length: " + std::to_string(length));
+	}
 
 	if (csarVersion != 0x02000000)
 	{
@@ -66,20 +93,43 @@ bool Csar::Extract()
 	uint32_t strgOffset = ReadFixLen(pos, 4);
 	uint32_t strgLength = ReadFixLen(pos, 4);
 
+	if (Common::ShowAllProcessDetails)
+	{
+		GlobalFuncs_ShowMessage("STRG Offset: " + std::to_string(strgOffset));
+		GlobalFuncs_ShowMessage("STRG Length: " + std::to_string(strgLength));
+	}
+
 	if (!Common::Assert(pos, 0x2001, ReadFixLen(pos, 4))) { return false; }
 
 	uint32_t infoOffset = ReadFixLen(pos, 4);
 	uint32_t infoLength = ReadFixLen(pos, 4);
+
+	if (Common::ShowAllProcessDetails)
+	{
+		GlobalFuncs_ShowMessage("Info Offset: " + std::to_string(infoOffset));
+		GlobalFuncs_ShowMessage("Info Length: " + std::to_string(infoLength));
+	}
 
 	if (!Common::Assert(pos, 0x2002, ReadFixLen(pos, 4))) { return false; }
 
 	uint32_t fileOffset = ReadFixLen(pos, 4);
 	uint32_t fileLength = ReadFixLen(pos, 4);
 
+	if (Common::ShowAllProcessDetails)
+	{
+		GlobalFuncs_ShowMessage("File Offset: " + std::to_string(fileOffset));
+		GlobalFuncs_ShowMessage("File Length: " + std::to_string(fileLength));
+	}
+
 	vector<CsarStrg> strgs;
 
 	if (strgOffset != 0xFFFFFFFF)
 	{
+		if (Common::ShowAllProcessDetails)
+		{
+			GlobalFuncs_ShowMessage("strgOffset is not '0xFFFFFFFF', get STRG details...");
+		}
+
 		pos = Data + strgOffset;
 
 		if (!Common::Assert(pos, 0x53545247, ReadFixLen(pos, 4, false))) { return false; }
@@ -88,10 +138,21 @@ bool Csar::Extract()
 
 		uint32_t strgStringsOffset = ReadFixLen(pos, 4);
 
+		if (Common::ShowAllProcessDetails)
+		{
+			GlobalFuncs_ShowMessage("STRG Strings Offset: " + std::to_string(strgStringsOffset));
+		}
+
 		if (!Common::Assert(pos, 0x2401, ReadFixLen(pos, 4))) { return false; }
 
 		uint32_t strgUnknownOffset = ReadFixLen(pos, 4);
 		uint32_t strgCount = ReadFixLen(pos, 4);
+
+		if (Common::ShowAllProcessDetails)
+		{
+			GlobalFuncs_ShowMessage("STRG Unknown Offset: " + std::to_string(strgUnknownOffset));
+			GlobalFuncs_ShowMessage("STRG Count: " + std::to_string(strgCount));
+		}
 
 		for (uint32_t i = 0; i < strgCount; ++i)
 		{
@@ -109,6 +170,11 @@ bool Csar::Extract()
 			strgs[i].String = string(reinterpret_cast<const char*>(pos), strgs[i].Length - 1);
 
 			pos = i != (strgCount - 1) ? strgs[i + 1].Offset : pos + strgs[i].Length;
+
+			if (Common::ShowAllProcessDetails)
+			{
+				GlobalFuncs_ShowMessage("STRG Name #" + std::to_string(i + 1) + ": " + strgs[i].String);
+			}
 		}
 	}
 
@@ -125,6 +191,11 @@ bool Csar::Extract()
 	uint32_t infoCgrpOffset = 0;
 	uint32_t infoFileOffset = 0;
 	uint32_t infoEndOffset = 0;
+
+	if (Common::ShowAllProcessDetails)
+	{
+		GlobalFuncs_ShowMessage("Dealing with info offsets for all BCSAR values...");
+	}
 
 	for (uint8_t i = 0; i < 8; ++i)
 	{
@@ -157,7 +228,7 @@ bool Csar::Extract()
 				infoEndOffset = ReadFixLen(pos, 4); break;
 
 			default:
-				Common::Error(pos - 4, "A valid chunk type", offsetId);
+				Common::Error(pos - 4, "This is not a valid chunk type.", offsetId);
 
 				return false;
 		}
@@ -166,6 +237,11 @@ bool Csar::Extract()
 	pos = Data + infoOffset + 8 + infoFileOffset;
 
 	uint32_t fileCount = ReadFixLen(pos, 4);
+
+	if (Common::ShowAllProcessDetails)
+	{
+		GlobalFuncs_ShowMessage("File Count: " + std::to_string(fileCount));
+	}
 
 	vector<uint8_t*> fileOffsets;
 
@@ -223,7 +299,7 @@ bool Csar::Extract()
 				break;
 
 			default:
-				Common::Error(pos - 4, "A valid file type", fileId);
+				Common::Error(pos - 4, "This is not a valid file type.", fileId);
 
 				return false;
 		}
@@ -236,6 +312,11 @@ bool Csar::Extract()
 	uint32_t cwarCount = ReadFixLen(pos, 4);
 
 	vector<uint8_t*> cwarOffsets;
+
+	if (Common::ShowAllProcessDetails)
+	{
+		GlobalFuncs_ShowMessage("CWAR Count: " + std::to_string(cwarCount));
+	}
 
 	for (uint32_t i = 0; i < cwarCount; ++i)
 	{
@@ -377,14 +458,14 @@ bool Csar::Extract()
 		{
 			case 0x2201:
 			{
-				Common::Warning(pos - 16, "Skipping external stream");
+				Common::Warning(pos - 16, "External stream detected, skipping...");
 
 				break;
 			}
 
 			case 0x2202:
 			{
-				Common::Warning(pos - 16, "Skipping CWSD");
+				Common::Warning(pos - 16, "CWSD detected, skipping...");
 
 				break;
 			}
@@ -405,6 +486,11 @@ bool Csar::Extract()
 
 					current_path(cbnks[cbnk].FileName);
 
+					if (Common::ShowAllProcessDetails)
+					{
+						GlobalFuncs_ShowMessage("Writing BCSEQ of \"" + string(cseqs[i].FileName + ".bcseq") + "\"...");
+					}
+
 					ofstream ofs(string(cseqs[i].FileName + ".bcseq"), ofstream::binary);
 					ofs.write(reinterpret_cast<const char*>(pos), cseqLength);
 					ofs.close();
@@ -413,11 +499,24 @@ bool Csar::Extract()
 
 					if (!cseq.Convert())
 					{
+						if (Common::ShowAllProcessDetails)
+						{
+							GlobalFuncs_ShowMessage("BCSEQ conversion failed.");
+						}
 						return false;
+					}
+
+					if (Common::ShowAllProcessDetails)
+					{
+						GlobalFuncs_ShowMessage("Leaving directory...");
 					}
 
 					current_path("..");
 
+					if (Common::ShowAllProcessDetails)
+					{
+						GlobalFuncs_ShowMessage("BCSEQs extracted!");
+					}
 					cseqsFromCsar[id] = true;
 				}
 
@@ -425,7 +524,7 @@ bool Csar::Extract()
 			}
 
 			default:
-				Common::Error(pos - 16, "A valid music type", type);
+				Common::Error(pos - 16, "This is not a valid music type.", type);
 
 				return false;
 		}
